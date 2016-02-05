@@ -1,5 +1,16 @@
 <?php
 $min_time_to_departure = 60;
+
+/**
+ * The API key (or something like that)
+ * If they happen to change it, get a new one by running a "Next Departures"-request
+ * at mvg.de (e.g. with chrome) and looking at the network traffic in the
+ * debugger.
+ * In the Request Headers, there'll be something like:
+ * X-MVG-Authorization-Key:5af1beca494712ed38d313714d4caff6
+ *
+ * @var string Athorisation/Api-key for mvg.de
+ **/
 $api_key = "5af1beca494712ed38d313714d4caff6";
 
 
@@ -18,6 +29,28 @@ $context = stream_context_create (array ( 'http' => $contextData ));
 
 // Read page rendered as result of your POST request
 
+/**
+ * Returns an array like:
+ * {
+ * {
+ *  "departureTime" : 1454708280000,  // time as unix timestamp in milliseconds
+ *  "product" : "s",                  // for S-Bahn, "u" for U-Bahn, etc.
+ *  "label" : "7",                    // line Numer (like "7") as string
+ *  "destination" : "Höhenkirchen-Siegertsbrunn", // Destination Station Name
+ *  "live" : true                     // Nobody knows, seems to be true all the time
+ * }, […]}
+ *
+ * Station IDs can be reverse-engineered by running a "Next Departures"-request
+ * at mvg.de (e.g. with chrome) and looking at the network traffic in the
+ * debugger.
+ * There'll be a request something like:
+ * https://www.mvg.de/fahrinfo/api/departure/5?footway=0
+ * Where 5 is the Station ID and the rest can be safely ignored
+ *
+ * @param string $id The Station ID (like "1310")
+ * @return array Contains all the departures for the requested station
+ */
+
 function get_deps_for_station_id($id)
 {
     global $context;
@@ -28,9 +61,20 @@ function get_deps_for_station_id($id)
     return json_decode($result, true)['departures'];
 }
 
-function get_first_for_dest($deps, $dest, $line)
+
+/**
+ * Gets first entry for given Station ID, destinantion Array (to filter for
+ * trains going in a certian direction but terminating at an earlier station)
+ *
+ * @param string $station_id The Station ID (like "1310")
+ * @param array $dest Array with all wanted destinantions like array("Mittersendling", "Pasing")
+ * @param int $line The wanted line number
+ * @return array A single departure array like shown in get_deps_for_station_id()
+ */
+function get_first_dept_for_station_id($station_id, $dest, $line)
 {
     global $min_time_to_departure;
+    $deps = get_deps_for_station_id($station_id);
     for ($i=0; $i < count($deps); $i++) {
       // echo $i;
       $d = $deps[$i];
