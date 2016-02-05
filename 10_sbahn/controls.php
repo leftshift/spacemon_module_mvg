@@ -6,7 +6,7 @@ $lines = $moduleconfig["line"];
 
 foreach ($lines as $line) {
 	$dest = get_first_dept_for_station_id($moduleconfig["stationid"], $line["dests"], $line["num"]);
-	if ($dest == "") {
+	if ($dest == null) {
 	    $next = "--";
 	} else {
 	    $next_secs = $dest['departureTime'] / 1000 - time();
