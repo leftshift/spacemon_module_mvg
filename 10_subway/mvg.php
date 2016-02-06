@@ -58,7 +58,15 @@ function get_deps_for_station_id($id)
                       'https://www.mvg.de/fahrinfo/api/departure/'. $id .'?footway=0',  // page url
                       false,
                       $context);
-    return json_decode($result, true)['departures'];
+    $deps = json_decode($result, true)['departures'];
+
+    // Remove deps that have already happened
+    foreach ($deps as $key => $dept) {
+        if ($dept["departureTime"] < time() * 1000){
+            unset($deps[$key]);
+        }
+    }
+    return $deps;
 }
 
 
@@ -76,7 +84,6 @@ function get_first_dept_for_station_id($station_id, $dest, $line)
     global $min_time_to_departure;
     $deps = get_deps_for_station_id($station_id);
     for ($i=0; $i < count($deps); $i++) {
-      // echo $i;
       $d = $deps[$i];
       if (in_array($d['destination'], $dest) && $d['departureTime'] / 1000 - time() > $min_time_to_departure && $d['label'] == $line ) {
           return $deps[$i];
