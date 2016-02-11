@@ -58,6 +58,9 @@ function get_deps_for_station_id($id)
                       'https://www.mvg.de/fahrinfo/api/departure/'. $id .'?footway=0',  // page url
                       false,
                       $context);
+    if (! isset($result)){
+      error_log("No response from mvg.de");
+    }
     $deps = json_decode($result, true)['departures'];
     foreach ($deps as $key => $dept) {
         // echo $dept["departureTime"] . " vs " . time() * 1000;
