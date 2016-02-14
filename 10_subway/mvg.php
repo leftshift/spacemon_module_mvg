@@ -39,6 +39,14 @@ $context = stream_context_create (array ( 'http' => $contextData ));
 
 // Read page rendered as result of your POST request
 
+function my_log($msg, $log_level)
+{
+    global $logging_level;
+    if ($log_level <= $logging_level){
+        error_log($msg);
+    }
+}
+
 /**
  * Returns an array like:
  * {
@@ -60,14 +68,6 @@ $context = stream_context_create (array ( 'http' => $contextData ));
  * @param string $id The Station ID (like "1310")
  * @return array Contains all the departures for the requested station
  */
-
-function my_log($msg, $log_level)
-{
-    global $logging_level;
-    if ($log_level <= $logging_level){
-        error_log($msg);
-    }
-}
 
 function get_deps_for_station_id($id)
 {
