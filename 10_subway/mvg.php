@@ -2,6 +2,16 @@
 $min_time_to_departure = 60;
 
 /**
+ * Logging levels:
+ * 0: No logging
+ * 1: Log Fuckups
+ * 2: Log more
+ *
+ * @var int
+ **/
+$logging_level = 1;
+
+/**
  * The API key (or something like that)
  * If they happen to change it, get a new one by running a "Next Departures"-request
  * at mvg.de (e.g. with chrome) and looking at the network traffic in the
@@ -51,6 +61,14 @@ $context = stream_context_create (array ( 'http' => $contextData ));
  * @return array Contains all the departures for the requested station
  */
 
+function my_log($msg, $log_level)
+{
+    global $logging_level;
+    if ($log_level <= $logging_level){
+        error_log($msg);
+    }
+}
+
 function get_deps_for_station_id($id)
 {
     global $context;
@@ -59,18 +77,18 @@ function get_deps_for_station_id($id)
                       false,
                       $context);
     if (! isset($result)){
-      error_log("No response from mvg.de");
+      my_log("No response from mvg.de", 1);
     }
     $deps = json_decode($result, true)['departures'];
-    foreach ($deps as $key => $dept) {
+    foreach ($deps as $dept) {
         // echo $dept["departureTime"] . " vs " . time() * 1000;
         if ($dept["departureTime"] < time() * 1000){
-            $deps = array_splice($deps, $key, 1);
+            unset($dept);
         }
     }
+    $deps = array_values($deps); // Because unset() just clears the depature, so the index is then undefined. This reindexes the array
     return $deps;
 }
-
 
 /**
  * Gets first entry for given Station ID, destinantion Array (to filter for
@@ -85,6 +103,9 @@ function get_first_dept_for_station_id($station_id, $dest, $line)
 {
     global $min_time_to_departure;
     $deps = get_deps_for_station_id($station_id);
+    if (empty($deps)){
+        my_log("Empty array!", 1);
+    }
     for ($i=0; $i < count($deps); $i++) {
       // echo $i;
       $d = $deps[$i];
